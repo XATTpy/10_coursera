@@ -1,4 +1,5 @@
-
+import requests
+import lxml
 
 def get_courses_list():
     pass
