@@ -5,9 +5,45 @@ from selenium import webdriver
 import requests
 import re
 import time
+from openpyxl import Workbook
+from os import path
+import argparse
+import os
 
 
-def get_courses_list(courses_count=5):
+def get_args():
+    parser = argparse.ArgumentParser(description='Данные о курсах на Курсере.')
+    parser.add_argument(
+        'geckodriver',
+        type=str,
+        help='Введите путь к скаченному geckodriver.'
+    )
+    parser.add_argument(
+        '-b',
+        '--browser',
+        type=int,
+        default=0,
+        help='Если используете Chrome, то введите 1.'
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=str,
+        default=os.getcwd(),
+        help='Введите путь для сохранения xlsx-файла.'
+    )
+    parser.add_argument(
+        '-c',
+        '--count', 
+        type=int,
+        default=20,
+        help='Введите количество курсов.'
+    )
+    args = parser.parse_args()
+    return args
+
+
+def get_courses_list(courses_count=0):
     courses_list = []
     url = 'https://www.coursera.org/sitemap~www~courses.xml'
     request = requests.get(url).content
@@ -20,8 +56,15 @@ def get_courses_list(courses_count=5):
     return courses_list[:courses_count]
 
 
-def get_response(url):
+def get_response_firefox(url):
     driver = webdriver.Firefox(executable_path='/home/xatt/Python/devman/geckodriver')
+    driver.get(url)
+    html = driver.page_source
+    return html
+
+
+def get_response_chrome(url):
+    driver = webdriver.Chrome(executable_path='/home/xatt/Python/devman/geckodriver')
     driver.get(url)
     html = driver.page_source
     return html
@@ -44,26 +87,45 @@ def get_rating(soup):
     return rating
 
 
-def get_course_info(courses_list):
-    course_info = []
+def get_weaks(soup):
+    try:
+        weaks = len(soup.find(class_='Syllabus').find_all('div', text = re.compile('Week')))
+    except AttributeError:
+        weaks = 'Unknown'
+    return weaks
+
+
+def get_course_info(courses_list, browser):
+    courses_info = []
     for url in courses_list:
-        html = get_response(url)
+        if not browser:
+            html = get_response_firefox(url)
+        else:
+            html = get_response_chrome(url)
         soup = BeautifulSoup(html, 'html.parser')
 
         title = soup.title.text.split('|')[0]
         language = soup.select_one('.ProductGlance > :last-of-type h4').text
-        weaks = len(soup.find(class_='Syllabus').find_all('div', text = re.compile('Week')))
+        weaks = get_weaks(soup)
         rating = get_rating(soup)
         start_date = get_start_date(soup)
-        course_info.append([title, language, start_date, weaks, rating])
-    return course_info
+        courses_info.append([title, language, start_date, weaks, rating])
+    return courses_info
 
 
-def output_courses_info_to_xlsx(filepath):
-    pass
+def output_courses_info_to_xlsx(filepath, courses_info):
+    xlsx = Workbook()
+    courses_xlsx = xlsx.active
+    courses_xlsx.append(['Course name', 'Language', 'Start Date', 'Number of Weeks', 'Rating'])
+    for course_info in courses_info:
+        courses_xlsx.append(course_info)
+    xlsx.save(filepath)
 
 
 if __name__ == '__main__':
-    courses_list = get_courses_list()
-    courses_info = get_course_info(courses_list)
-    print(courses_info)
+    args = get_args()
+    courses_list = get_courses_list(args.count)
+    browser = args.browser
+    courses_info = get_course_info(courses_list, browser)
+    filepath = path.join(args.output, 'courses.xlsx')
+    output_courses_info_to_xlsx(filepath, courses_info)
