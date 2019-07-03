@@ -72,7 +72,8 @@ def get_response_chrome(url, driverpath):
 
 def get_start_date(soup):
     try:
-        time.sleep(1)
+        time4load = 1
+        time.sleep(time4load)
         start_date = soup.find(id='start-date-string').text.replace('Starts ', '')
     except AttributeError:
         start_date = 'Unknown'
