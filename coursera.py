@@ -39,6 +39,13 @@ def get_args():
         default=20,
         help='Введите количество курсов.'
     )
+    parser.add_argument(
+        '-t',
+        '--time', 
+        type=int,
+        default=1,
+        help='Время для прогрузки страницы (в секундах)'
+    )
     args = parser.parse_args()
     return args
 
@@ -70,9 +77,8 @@ def get_response_chrome(url, driverpath):
     return html
 
 
-def get_start_date(soup):
+def get_start_date(soup, time4load):
     try:
-        time4load = 1
         time.sleep(time4load)
         start_date = soup.find(id='start-date-string').text.replace('Starts ', '')
     except AttributeError:
@@ -96,7 +102,7 @@ def get_weaks(soup):
     return weaks
 
 
-def get_course_info(courses_list, browser, driverpath):
+def get_course_info(courses_list, browser, driverpath, time4load):
     courses_info = []
     for url in courses_list:
         if not browser:
@@ -109,7 +115,7 @@ def get_course_info(courses_list, browser, driverpath):
         language = soup.select_one('.ProductGlance > :last-of-type h4').text
         weaks = get_weaks(soup)
         rating = get_rating(soup)
-        start_date = get_start_date(soup)
+        start_date = get_start_date(soup, time4load)
         courses_info.append([title, language, start_date, weaks, rating])
     return courses_info
 
@@ -128,6 +134,7 @@ if __name__ == '__main__':
     courses_list = get_courses_list(args.count)
     browser = args.browser
     driverpath = args.geckodriver
-    courses_info = get_course_info(courses_list, browser, driverpath)
+    time4load = args.time
+    courses_info = get_course_info(courses_list, browser, driverpath, time4load)
     filepath = path.join(args.output, 'courses.xlsx')
     output_courses_info_to_xlsx(filepath, courses_info)
