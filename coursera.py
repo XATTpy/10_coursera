@@ -23,7 +23,7 @@ def get_args():
         '--browser',
         type=int,
         default=0,
-        help='Если используете Chrome, то введите 1.'
+        help='Если используете Chrome, то введите 1 (если Firefox, то ничего не вводите)'
     )
     parser.add_argument(
         '-o',
@@ -56,14 +56,14 @@ def get_courses_list(courses_count=0):
     return courses_list[:courses_count]
 
 
-def get_response_firefox(url):
+def get_response_firefox(url, driverpath):
     driver = webdriver.Firefox(executable_path='/home/xatt/Python/devman/geckodriver')
     driver.get(url)
     html = driver.page_source
     return html
 
 
-def get_response_chrome(url):
+def get_response_chrome(url, driverpath):
     driver = webdriver.Chrome(executable_path='/home/xatt/Python/devman/geckodriver')
     driver.get(url)
     html = driver.page_source
@@ -95,13 +95,13 @@ def get_weaks(soup):
     return weaks
 
 
-def get_course_info(courses_list, browser):
+def get_course_info(courses_list, browser, driverpath):
     courses_info = []
     for url in courses_list:
         if not browser:
-            html = get_response_firefox(url)
+            html = get_response_firefox(url, driverpath)
         else:
-            html = get_response_chrome(url)
+            html = get_response_chrome(url, driverpath)
         soup = BeautifulSoup(html, 'html.parser')
 
         title = soup.title.text.split('|')[0]
@@ -126,6 +126,7 @@ if __name__ == '__main__':
     args = get_args()
     courses_list = get_courses_list(args.count)
     browser = args.browser
-    courses_info = get_course_info(courses_list, browser)
+    driverpath = args.geckodriver
+    courses_info = get_course_info(courses_list, browser, driverpath)
     filepath = path.join(args.output, 'courses.xlsx')
     output_courses_info_to_xlsx(filepath, courses_info)
