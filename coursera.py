@@ -9,6 +9,7 @@ from os import path
 import argparse
 import os
 from datetime import datetime
+from collections import namedtuple
 
 
 def get_args():
@@ -61,18 +62,19 @@ def get_rating(soup):
 
 
 def get_htmlparser_and_scriptdata(url):
-    html = requests.get(url).text.encode('iso-8859-1').decode('utf8')
+    html = requests.get(url).content
     soup = BeautifulSoup(html, 'html.parser')
-    script_data = json.loads(soup.select_one('script[type="application/ld+json"]').get_text())
-    return soup, script_data
+    script = json.loads(soup.select_one('script[type="application/ld+json"]').get_text())
+    return soup, script
 
 
-def get_course_info(soup, script_data):
+def get_course_info(soup, script):
     title = soup.title.text.split('|')[0]
     language = soup.select_one('.ProductGlance > :last-of-type h4').text
-    start_date = script_data['@graph'][1]['hasCourseInstance']['startDate']
+    start_date = script['@graph'][1]['hasCourseInstance']['startDate']
     weeks, rating = get_weeks(soup), get_rating(soup)
-    return [title, language, start_date, weeks, rating]
+    course_info = namedtuple('course_info', 'name language start_date weeks rating')
+    return course_info(title, language, start_date, weeks, rating)
 
 
 def output_courses_info_to_xlsx(filepath, courses_info):
@@ -89,8 +91,8 @@ if __name__ == '__main__':
     courses_url_list = get_random_courses_urls(args.count)
     courses_info = []
     for url in courses_url_list:
-        soup, script_data = get_htmlparser_and_scriptdata(url)
-        course_info = get_course_info(soup, script_data)
+        soup, script = get_htmlparser_and_scriptdata(url)
+        course_info = get_course_info(soup, script)
         courses_info.append(course_info)
 
     filepath = path.join(args.output, 'courses.xlsx')
