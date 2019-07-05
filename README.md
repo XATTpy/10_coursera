@@ -2,38 +2,6 @@
 
 Этот скрипт находит информацию о случайных курсах на [COURSERA.org](https://www.coursera.org) и записывает её в xlsx-файл.
 
-# Как использовать
-
-Для работы скрипта нужен установленный браузер Firefox/Chrome. 
-
-При этом, необходим ещё ```geckodriver```/```chromedriver```. Скачать его можно по ссылке:
-* Для фаерфокса: https://github.com/mozilla/geckodriver/releases/
-* Для хрома: https://sites.google.com/a/chromium.org/chromedriver/downloads
-
-После запуска скрипта будут открываться окна браузера - это нормально. Их можно закрывать, но осторожно: нельзя закрывать окно браузера на котором идёт сбор информации. 
-Это необходимо, чтобы загрузить все скрипты страницы, которые могут содержать нужную информацию.
-
-При запуске скрипта с флагом -h можно получить информацию об аргументах:
-```bash
-$ python3 coursera.py -h
-usage: coursera.py [-h] [-b BROWSER] [-o OUTPUT] [-c COUNT] geckodriver
-
-Данные о курсах на Курсере.
-
-positional arguments:
-  geckodriver           Введите путь к скаченному geckodriver.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -b BROWSER, --browser BROWSER
-                        Если используете Chrome, то введите 1 (если Firefox,
-                        то ничего не вводите)
-  -o OUTPUT, --output OUTPUT
-                        Введите путь для сохранения xlsx-файла.
-  -c COUNT, --count COUNT
-                        Введите количество курсов.
-```
-
 # Быстрый запуск
 Используй pip(или pip3) для установки всех зависимостей:
 
@@ -46,7 +14,7 @@ pip install -r requirements.txt # alternatively try pip3
 Теперь можно запускать скрипт:
 
 ```bash
-$ python3 coursera.py /path/to/geckodriver -c 5 -o /path/to/output/dir
+$ python3 coursera.py -c 5 -o /path/to/output/dir
 ```
 
 # Цели проекта
