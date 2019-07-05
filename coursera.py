@@ -31,7 +31,7 @@ def get_args():
     return args
 
 
-def get_courses_list(courses_count):
+def get_random_courses_urls(courses_count):
     courses_list = []
     url = 'https://www.coursera.org/sitemap~www~courses.xml'
     request = requests.get(url).content
@@ -60,18 +60,19 @@ def get_rating(soup):
     return rating
 
 
-def get_course_info(courses_list):
-    courses_info = []
-    for url in courses_list:
-        html = requests.get(url).text.encode('iso-8859-1').decode('utf8')
-        soup = BeautifulSoup(html, 'html.parser')
-        script_data = json.loads(soup.select_one('script[type="application/ld+json"]').get_text())
-        title = soup.title.text.split('|')[0]
-        language = soup.select_one('.ProductGlance > :last-of-type h4').text
-        start_date = script_data['@graph'][1]['hasCourseInstance']['startDate']
-        weeks, rating = get_weeks(soup), get_rating(soup)
-        courses_info.append([title, language, start_date, weeks, rating])
-    return courses_info
+def get_htmlparser_and_scriptdata(url):
+    html = requests.get(url).text.encode('iso-8859-1').decode('utf8')
+    soup = BeautifulSoup(html, 'html.parser')
+    script_data = json.loads(soup.select_one('script[type="application/ld+json"]').get_text())
+    return soup, script_data
+
+
+def get_course_info(soup, script_data):
+    title = soup.title.text.split('|')[0]
+    language = soup.select_one('.ProductGlance > :last-of-type h4').text
+    start_date = script_data['@graph'][1]['hasCourseInstance']['startDate']
+    weeks, rating = get_weeks(soup), get_rating(soup)
+    return [title, language, start_date, weeks, rating]
 
 
 def output_courses_info_to_xlsx(filepath, courses_info):
@@ -85,7 +86,12 @@ def output_courses_info_to_xlsx(filepath, courses_info):
 
 if __name__ == '__main__':
     args = get_args()
-    courses_list = get_courses_list(args.count)
-    courses_info = get_course_info(courses_list)
+    courses_url_list = get_random_courses_urls(args.count)
+    courses_info = []
+    for url in courses_url_list:
+        soup, script_data = get_htmlparser_and_scriptdata(url)
+        course_info = get_course_info(soup, script_data)
+        courses_info.append(course_info)
+
     filepath = path.join(args.output, 'courses.xlsx')
     output_courses_info_to_xlsx(filepath, courses_info)
